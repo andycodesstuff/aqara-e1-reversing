@@ -197,10 +197,67 @@ namespace JN5189 {
       #define REG_AP_BASE 0xF8 // R
       #define REG_AP_IDR  0xFC // R
 
+      // 
+      // Reference: https://developer.arm.com/documentation/ddi0439/b
+      //            Cortex-M4 Technical Reference Manual - Revision r0p0
+      //            Chapter 4: System Control
+      //            Table 4-1: System control registers
+      // 
+      #define REG_SYS_CTRL_ACTLR    0xE000E008 // R/W
+      #define REG_SYS_CTRL_STCSR    0xE000E010 // R/W
+      #define REG_SYS_CTRL_STRVR    0xE000E014 // R/W
+      #define REG_SYS_CTRL_STCVR    0xE000E018 // R/W
+      #define REG_SYS_CTRL_STCR     0xE000E01C // R
+      #define REG_SYS_CTRL_CPUID    0xE000ED00 // R
+      #define REG_SYS_CTRL_ICSR     0xE000ED04 // R/W or R
+      #define REG_SYS_CTRL_VTOR     0xE000ED08 // R/W
+      #define REG_SYS_CTRL_AIRCR    0xE000ED0C // R/W
+      #define REG_SYS_CTRL_SCR      0xE000ED10 // R/W
+      #define REG_SYS_CTRL_CCR      0xE000ED14 // R/W
+      #define REG_SYS_CTRL_SHPR1    0xE000ED18 // R/W
+      #define REG_SYS_CTRL_SHPR2    0xE000ED1C // R/W
+      #define REG_SYS_CTRL_SHPR3    0xE000ED20 // R/W
+      #define REG_SYS_CTRL_SHCSR    0xE000ED24 // R/W
+      #define REG_SYS_CTRL_CFSR     0xE000ED28 // R/W
+      #define REG_SYS_CTRL_HFSR     0xE000ED2C // R/W
+      #define REG_SYS_CTRL_DFSR     0xE000ED30 // R/W
+      #define REG_SYS_CTRL_MMFAR    0xE000ED34 // R/W
+      #define REG_SYS_CTRL_BFAR     0xE000ED38 // R/W
+      #define REG_SYS_CTRL_AFSR     0xE000ED3C // R/W
+      #define REG_SYS_CTRL_ID_PFR0  0xE000ED40 // R
+      #define REG_SYS_CTRL_ID_PFR1  0xE000ED44 // R
+      #define REG_SYS_CTRL_ID_DFR0  0xE000ED48 // R
+      #define REG_SYS_CTRL_ID_AFR0  0xE000ED4C // R
+      #define REG_SYS_CTRL_ID_MMFR0 0xE000ED50 // R
+      #define REG_SYS_CTRL_ID_MMFR1 0xE000ED54 // R
+      #define REG_SYS_CTRL_ID_MMFR2 0xE000ED58 // R
+      #define REG_SYS_CTRL_ID_MMFR3 0xE000ED5C // R
+      #define REG_SYS_CTRL_ID_ISAR0 0xE000ED60 // R
+      #define REG_SYS_CTRL_ID_ISAR1 0xE000ED64 // R
+      #define REG_SYS_CTRL_ID_ISAR2 0xE000ED68 // R
+      #define REG_SYS_CTRL_ID_ISAR3 0xE000ED6C // R
+      #define REG_SYS_CTRL_ID_ISAR4 0xE000ED70 // R
+      #define REG_SYS_CTRL_CPACR    0xE000ED88 // R/W
+      #define REG_SYS_CTRL_STIR     0xE000EF00 // W
+
+      // 
+      // Reference: https://developer.arm.com/documentation/ddi0439/b
+      //            Cortex-M4 Technical Reference Manual - Revision r0p0
+      //            Chapter 8: Debug
+      //            Table 8-4: Debug registers
+      // 
+      #define REG_DBG_CTRL_DFSR  0xE000ED30 // R/W
+      #define REG_DBG_CTRL_DHCSR 0xE000EDF0 // R/W
+      #define REG_DBG_CTRL_DCRSR 0xE000EDF4 // W
+      #define REG_DBG_CTRL_DCRDR 0xE000EDF8 // R/W
+      #define REG_DBG_CTRL_DEMCR 0xE000EDFC // R/W
+
       uint8_t read_DP(uint8_t address, uint32_t * const &value);
-      uint8_t read_AP(uint8_t address, uint32_t * const &value);
       uint8_t write_DP(uint8_t address, uint32_t value);
-      uint8_t write_AP(uint8_t address, uint32_t value); 
+      uint8_t read_AP(uint8_t address, uint32_t * const &value);
+      uint8_t write_AP(uint8_t address, uint32_t value);
+      uint8_t read_CTRL(uint32_t address, uint32_t * const &value);
+      uint8_t write_CTRL(uint32_t address, uint32_t value);
   };
 }
 

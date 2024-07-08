@@ -6,6 +6,10 @@ uint8_t JN5189::SWD::read_DP(uint8_t address, uint32_t * const &value) {
   return __access_register(APnDP_DP, RnW_READ, address, value);
 }
 
+uint8_t JN5189::SWD::write_DP(uint8_t address, uint32_t value) {
+  return __access_register(APnDP_DP, RnW_WRITE, address, &value);
+}
+
 uint8_t JN5189::SWD::read_AP(uint8_t address, uint32_t * const &value) {
   uint32_t select = 0;
   uint8_t ack = 0;
@@ -28,10 +32,6 @@ uint8_t JN5189::SWD::read_AP(uint8_t address, uint32_t * const &value) {
   return ack;
 }
 
-uint8_t JN5189::SWD::write_DP(uint8_t address, uint32_t value) {
-  return __access_register(APnDP_DP, RnW_WRITE, address, &value);
-}
-
 uint8_t JN5189::SWD::write_AP(uint8_t address, uint32_t value) {
   uint32_t select = 0;
   uint8_t ack = 0;
@@ -49,6 +49,24 @@ uint8_t JN5189::SWD::write_AP(uint8_t address, uint32_t value) {
 
   // Write to the selected register
   ack = __access_register(APnDP_AP, RnW_WRITE, address & 0b1100, &value);
+
+  return ack;
+}
+
+uint8_t JN5189::SWD::read_CTRL(uint32_t address, uint32_t * const &value) {
+  uint8_t ack = 0;
+
+  ack = write_AP(REG_AP_TAR, address);
+  ack = read_AP(REG_AP_DRW, value);
+
+  return ack;
+}
+
+uint8_t JN5189::SWD::write_CTRL(uint32_t address, uint32_t value) {
+  uint8_t ack = 0;
+
+  ack = write_AP(REG_AP_TAR, address);
+  ack = write_AP(REG_AP_DRW, value);
 
   return ack;
 }

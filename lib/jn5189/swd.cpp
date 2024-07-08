@@ -4,7 +4,6 @@
 
 std::vector<uint8_t> JN5189::SWD::memory_read(uint32_t address, size_t n_bytes) {
   std::vector<uint8_t> bytes;
-  size_t bytes_read;
   uint32_t data;
   uint8_t ack;
 
@@ -13,7 +12,7 @@ std::vector<uint8_t> JN5189::SWD::memory_read(uint32_t address, size_t n_bytes) 
   ack = write_AP(REG_AP_TAR, address);
   if (ack != ACK_OK) return bytes;
 
-  for (bytes_read = 0; bytes_read < n_bytes && address < 0xFFFFFFFF; bytes_read += 4) {
+  for (size_t bytes_read = 0; bytes_read < n_bytes && address < 0xFFFFFFFF; bytes_read += 4) {
     ack = read_AP(REG_AP_DRW, &data);
 
     // Use an easily recognizable sentinel value for failed read operations
@@ -62,17 +61,13 @@ bool JN5189::SWD::connect() {
 }
 
 void JN5189::SWD::cpu_halt() {
-  write_AP(REG_AP_TAR, 0xE000EDF0);
-  write_AP(REG_AP_DRW, 0xA05F0003);
-  write_AP(REG_AP_TAR, 0xE000EDFC);
-  write_AP(REG_AP_DRW, 0x00000001);
-  write_AP(REG_AP_TAR, 0xE000ED0C);
-  write_AP(REG_AP_DRW, 0x05FA0004);
+  write_CTRL(REG_DBG_CTRL_DHCSR, 0xA05F0003); // Enable debugging
+  write_CTRL(REG_DBG_CTRL_DEMCR, 0x00000001); // Enable CPU halt on reset
+  write_CTRL(REG_SYS_CTRL_AIRCR, 0x05FA0004); // Request a system reset
 }
 
 void JN5189::SWD::cpu_resume() {
-  write_AP(REG_AP_TAR, 0xE000EDFC);
-  write_AP(REG_AP_DRW, 0x00000000);
-  write_AP(REG_AP_TAR, 0xE000ED0C);
-  write_AP(REG_AP_DRW, 0x05FA0004);
+  write_CTRL(REG_DBG_CTRL_DHCSR, 0xA05F0000); // Disable debugging
+  write_CTRL(REG_DBG_CTRL_DEMCR, 0x00000000); // Disable CPU halt on reset
+  write_CTRL(REG_SYS_CTRL_AIRCR, 0x05FA0004); // Request a system reset
 }
