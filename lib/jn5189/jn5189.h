@@ -177,6 +177,11 @@ namespace JN5189 {
       #define REG_DP_RDBUFF    0x0C // R
 
       // 
+      // Reference: https://developer.arm.com/documentation/ddi0439/b
+      //            Cortex-M4 Technical Reference Manual - Revision r0p0
+      //            Chapter 8: Debug
+      //            Table 8-5: AHB-AP register summary
+      // 
       // Reference: https://developer.arm.com/documentation/ihi0031/g
       //            ARM® Debug Interface Architecture Specification - ADIv5.0 to ADIv5.2
       //            Chapter C2: The Memory Access Port
@@ -189,7 +194,6 @@ namespace JN5189 {
       #define REG_AP_BD1  0x14 // R/W
       #define REG_AP_BD2  0x18 // R/W
       #define REG_AP_BD3  0x1C // R/W
-      #define REG_AP_CFG  0xF4 // R
       #define REG_AP_BASE 0xF8 // R
       #define REG_AP_IDR  0xFC // R
 
