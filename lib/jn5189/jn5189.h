@@ -252,6 +252,18 @@ namespace JN5189 {
       #define REG_DBG_CTRL_DCRDR 0xE000EDF8 // R/W
       #define REG_DBG_CTRL_DEMCR 0xE000EDFC // R/W
 
+      // 
+      // Reference: https://developer.arm.com/documentation/ddi0439/b
+      //            Cortex-M4 Technical Reference Manual - Revision r0p0
+      //            Chapter 5: Memory Protection Unit
+      //            Table 5-1: MPU registers
+      // 
+      #define REG_MPU_TYPE 0xE000ED90 // R
+      #define REG_MPU_CTRL 0xE000ED94 // R/W
+      #define REG_MPU_RNR  0xE000ED98 // R/W
+      #define REG_MPU_RBAR 0xE000ED9C // R/W
+      #define REG_MPU_RASR 0xE000EDA0 // R/W
+
       uint8_t read_DP(uint8_t address, uint32_t * const &value);
       uint8_t write_DP(uint8_t address, uint32_t value);
       uint8_t read_AP(uint8_t address, uint32_t * const &value);
