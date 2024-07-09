@@ -256,8 +256,8 @@ namespace JN5189 {
       uint8_t write_DP(uint8_t address, uint32_t value);
       uint8_t read_AP(uint8_t address, uint32_t * const &value);
       uint8_t write_AP(uint8_t address, uint32_t value);
-      uint8_t read_CTRL(uint32_t address, uint32_t * const &value);
-      uint8_t write_CTRL(uint32_t address, uint32_t value);
+      uint8_t read_register(uint32_t address, uint32_t * const &value);
+      uint8_t write_register(uint32_t address, uint32_t value);
   };
 }
 

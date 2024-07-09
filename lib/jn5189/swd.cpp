@@ -61,13 +61,13 @@ bool JN5189::SWD::connect() {
 }
 
 void JN5189::SWD::cpu_halt() {
-  write_CTRL(REG_DBG_CTRL_DHCSR, 0xA05F0003); // Enable debugging
-  write_CTRL(REG_DBG_CTRL_DEMCR, 0x00000001); // Enable CPU halt on reset
-  write_CTRL(REG_SYS_CTRL_AIRCR, 0x05FA0004); // Request a system reset
+  write_register(REG_DBG_CTRL_DHCSR, 0xA05F0003); // Enable debugging
+  write_register(REG_DBG_CTRL_DEMCR, 0x00000001); // Enable CPU halt on reset
+  write_register(REG_SYS_CTRL_AIRCR, 0x05FA0004); // Request a system reset
 }
 
 void JN5189::SWD::cpu_resume() {
-  write_CTRL(REG_DBG_CTRL_DHCSR, 0xA05F0000); // Disable debugging
-  write_CTRL(REG_DBG_CTRL_DEMCR, 0x00000000); // Disable CPU halt on reset
-  write_CTRL(REG_SYS_CTRL_AIRCR, 0x05FA0004); // Request a system reset
+  write_register(REG_DBG_CTRL_DHCSR, 0xA05F0000); // Disable debugging
+  write_register(REG_DBG_CTRL_DEMCR, 0x00000000); // Disable CPU halt on reset
+  write_register(REG_SYS_CTRL_AIRCR, 0x05FA0004); // Request a system reset
 }

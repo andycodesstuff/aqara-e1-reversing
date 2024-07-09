@@ -53,7 +53,7 @@ uint8_t JN5189::SWD::write_AP(uint8_t address, uint32_t value) {
   return ack;
 }
 
-uint8_t JN5189::SWD::read_CTRL(uint32_t address, uint32_t * const &value) {
+uint8_t JN5189::SWD::read_register(uint32_t address, uint32_t * const &value) {
   uint8_t ack = 0;
 
   ack = write_AP(REG_AP_TAR, address);
@@ -62,7 +62,7 @@ uint8_t JN5189::SWD::read_CTRL(uint32_t address, uint32_t * const &value) {
   return ack;
 }
 
-uint8_t JN5189::SWD::write_CTRL(uint32_t address, uint32_t value) {
+uint8_t JN5189::SWD::write_register(uint32_t address, uint32_t value) {
   uint8_t ack = 0;
 
   ack = write_AP(REG_AP_TAR, address);
