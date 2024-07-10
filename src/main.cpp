@@ -12,8 +12,8 @@
 #define UART_RX_PIN 16
 #define UART_TX_PIN 17
 #define UART_BAUD_RATE 115200
-#define SWCLK_PIN 4
-#define SWDIO_PIN 5
+#define SWCLK_PIN GPIO_NUM_18
+#define SWDIO_PIN GPIO_NUM_23
 #define SERIAL_MONITOR_BAUD_RATE 115200
 
 enum Command {
@@ -357,19 +357,18 @@ void JN5189_SWDModeEnter() {
     return;
   }
 
-  Serial.println("Found SWD device");
-  Serial.println("Halting CPU...");
-
+  Serial.println("Found SWD device, halting CPU...");
   SWD->cpu_halt();
-
   Serial.println("Halted, initialization complete");
 }
 
 void JN5189_SWDModeLeave() {
-  Serial.println("Disconnecting...");
-
+  Serial.println("Resetting CPU...");
   SWD->cpu_resume();
+  Serial.println("Reset");
 
+  Serial.println("Disconnecting...");
+  SWD->disconnect();
   Serial.println("Disconnected");
 
   pinMode(SWCLK_PIN, INPUT);

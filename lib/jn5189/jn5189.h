@@ -2,6 +2,7 @@
 #define MY_JN5189_H_
 
 #include <Arduino.h>
+#include <driver/spi_master.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <vector>
@@ -98,18 +99,13 @@ namespace JN5189 {
     private:
       uint8_t swd_clk_pin;
       uint8_t swd_io_pin;
+      spi_device_handle_t spi_device;
       HardwareSerial &debug_serial;
       uint8_t log_level;
 
-      // Drive the clock line at a frequency of 500 KHz
-      // This is the maximum speed achieveable with microseconds delays
-      // 
-      //      T = 0.000002 sec
-      //      f = 1 / T = 1 / 0.000002 = 500,000 Hz or 500 KHz
-      // 
-      #define CLOCK_HALF_CYCLE_MICROSEC 1
-      #define RESET_SEQUENCE_LENGTH 50
+      #define RESET_SEQUENCE_LENGTH 64
       #define SYNC_SEQUENCE_LENGTH 8
+      #define TURNAROUND_PERIOD_LENGTH 1
       #define REG_ACCESS_MAX_RETRIES 16
 
       enum RequestAPnDP {
@@ -130,17 +126,17 @@ namespace JN5189 {
 
       uint8_t __access_register(RequestAPnDP APnDP, RequestRnW RnW, uint8_t address, uint32_t * const &value, int max_retries = REG_ACCESS_MAX_RETRIES);
       uint8_t __access_register_backend(RequestAPnDP APnDP, RequestRnW RnW, uint8_t address, uint32_t * const &value);
-      uint32_t __read_bits(size_t n_bits);
-      void __write_bits(uint32_t value, size_t n_bits);
       bool __parity_bit(uint32_t value);
 
       void __switch_mode_jtag_to_swd();
       void __line_reset();
       void __sync();
       void __turnaround_period();
-      void __pulse_clock();
-      void __setup_master_read();
-      void __setup_master_write();
+
+      void __init_spi();
+      void __deinit_spi();
+      void __recv_bits_spi(uint32_t * const &value, size_t n_bits);
+      void __send_bits_spi(uint32_t value, size_t n_bits);
 
     public:
       SWD(uint8_t swd_clk_pin, uint8_t swd_io_pin, HardwareSerial &debug_serial, uint8_t log_level):
@@ -159,6 +155,7 @@ namespace JN5189 {
       std::vector<uint8_t> memory_read(uint32_t address, size_t length);
 
       bool connect();
+      bool disconnect();
       void cpu_halt();
       void cpu_resume();
 

@@ -32,7 +32,8 @@ std::vector<uint8_t> JN5189::SWD::memory_read(uint32_t address, size_t n_bytes) 
 bool JN5189::SWD::connect() {
   uint32_t idcode;
 
-  // Connect to the target and ensure the device is operating in SWD mode
+  // Connect to the target via SPI and ensure the device is operating in SWD mode
+  __init_spi();
   __switch_mode_jtag_to_swd();
 
   // Parse values
@@ -58,6 +59,13 @@ bool JN5189::SWD::connect() {
   write_AP(REG_AP_CSW,       0x23000052); // Enable address auto-increment on memory access
 
   return success;
+}
+
+bool JN5189::SWD::disconnect() {
+  // Disconnect the target and free the SPI bus
+  __deinit_spi();
+
+  return true;
 }
 
 void JN5189::SWD::cpu_halt() {

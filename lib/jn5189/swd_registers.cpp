@@ -137,7 +137,7 @@ uint8_t JN5189::SWD::__access_register_backend(RequestAPnDP APnDP,
                                                RequestRnW RnW,
                                                uint8_t address,
                                                uint32_t * const &value) {
-  uint8_t req = 0, par = 0, ack = 0;
+  uint32_t req = 0, par = 0, ack = 0;
 
   // Compute parity
   par |= APnDP << 3;
@@ -154,26 +154,26 @@ uint8_t JN5189::SWD::__access_register_backend(RequestAPnDP APnDP,
   bitWrite(req, 5, par);                  // Parity
   bitWrite(req, 6, 0);                    // Stop
   bitWrite(req, 7, 1);                    // Park
-  __write_bits(req, 8);
+  __send_bits_spi(req, 8);
 
   __turnaround_period();
 
   // Read ACK
-  ack = __read_bits(3);
+  __recv_bits_spi(&ack, 3);
 
   if (ack == ACK_OK) {
     if (RnW & RnW_READ) {
       // Read RDATA and parity bit
-      *value = __read_bits(32);
-      __read_bits(1);
+      __recv_bits_spi(value, 32);
+      __recv_bits_spi(&par, 1);
 
       __turnaround_period();
     } else {
       __turnaround_period();
 
       // Write WDATA and parity bit
-      __write_bits(*value, 32);
-      __write_bits(__parity_bit(*value), 1);
+      __send_bits_spi(*value, 32);
+      __send_bits_spi(__parity_bit(*value), 1);
     }
   }
 
