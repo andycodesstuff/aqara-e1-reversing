@@ -5,10 +5,10 @@
 
 #include "jn5189.h"
 
-#define PWR_PIN 19
-#define RSTN_PIN 21
-#define DIO4_PIN 22
-#define DIO5_PIN 23
+#define PWR_PIN 25
+#define RSTN_PIN 26
+#define DIO4_PIN 32
+#define DIO5_PIN 33
 #define UART_RX_PIN 16
 #define UART_TX_PIN 17
 #define UART_BAUD_RATE 115200
