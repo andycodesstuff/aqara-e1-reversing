@@ -1,8 +1,10 @@
 #include <Arduino.h>
+#include <WiFi.h>
 #include <iostream>
 #include <sstream>
 #include <vector>
 
+#include "env.h"
 #include "jn5189.h"
 
 #define PWR_PIN 25
@@ -59,6 +61,18 @@ void setup() {
   // Initialise UART connection
   UARTConnection.begin(UART_BAUD_RATE, SERIAL_8N1, UART_RX_PIN, UART_TX_PIN);
   Serial.println("UART2 initialised");
+
+  // Initialise WiFi connection
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
+
+  Serial.printf("Connecting to \"%s\"", WIFI_SSID);
+  while (WiFi.status() != WL_CONNECTED) {
+    Serial.print(".");
+    delay(250);
+  }
+  Serial.println();
+  Serial.print("Connected with IPv4 address ");
+  Serial.println(WiFi.localIP());
 
   // Initialise ISP and SWD helpers
   ISP = new JN5189::ISP(UARTConnection, Serial);

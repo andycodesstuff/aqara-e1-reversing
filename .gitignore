@@ -83,3 +83,6 @@ $RECYCLE.BIN/
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+
+# Environment variables and secrets
+src/env.h
