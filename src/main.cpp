@@ -429,12 +429,14 @@ void server_handle_command(AsyncClient *client, const std::string &command) {
       auto length  = std::stoi(args[2], 0, 16);
       auto data    = SWD->memory_read(address, length);
 
-      client->add("Data:", 6);
+      // Intentionally skip the string terminator as we're really sending raw bytes here, yet
+      // we're leveraging the convenience of strings and string formatting
+      client->add("Data:", 5);
       for (auto byte : data) {
         sprintf(formatted_byte, " %02X", byte);
-        client->add(formatted_byte, 4);
+        client->add(formatted_byte, 3);
       }
-      client->add("\n", 2);
+      client->add("\n", 1);
 
       client->send();
       break;
