@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <AsyncTCP.h>
 #include <WiFi.h>
 #include <iostream>
 #include <sstream>
@@ -17,6 +18,7 @@
 #define SWCLK_PIN GPIO_NUM_18
 #define SWDIO_PIN GPIO_NUM_23
 #define SERIAL_MONITOR_BAUD_RATE 115200
+#define SERVER_PORT 1337
 
 enum Command {
   ON,
@@ -39,10 +41,8 @@ enum Command {
 HardwareSerial UARTConnection(2);
 JN5189::ISP *ISP;
 JN5189::SWD *SWD;
-bool show_prompt;
-std::string line;
 
-std::string read_line(char new_char);
+std::string & trim(std::string &s);
 std::vector<std::string> split(const std::string &s, char delim);
 Command command_hash(const std::string &s);
 
@@ -52,6 +52,13 @@ void JN5189_Reset();
 void JN5189_ISPModeEnter();
 void JN5189_SWDModeEnter();
 void JN5189_SWDModeLeave();
+
+void server_handle_new_client(void *args, AsyncClient *client);
+void server_handle_data(void *args, AsyncClient *client, void *data, size_t data_len);
+void server_handle_error(void *args, AsyncClient *client, int8_t err);
+void server_handle_timeout(void *args, AsyncClient *client, uint32_t timestamp);
+void server_handle_disconnect(void *args, AsyncClient *client);
+void server_handle_command(AsyncClient *client, const std::string &command);
 
 void setup() {
   // Initialise serial monitor connection
@@ -74,6 +81,11 @@ void setup() {
   Serial.print("Connected with IPv4 address ");
   Serial.println(WiFi.localIP());
 
+  // Initialise TCP server
+  auto server = new AsyncServer(SERVER_PORT);
+  server->onClient(&server_handle_new_client, nullptr);
+  server->begin();
+
   // Initialise ISP and SWD helpers
   ISP = new JN5189::ISP(UARTConnection, Serial);
   SWD = new JN5189::SWD(SWCLK_PIN, SWDIO_PIN, Serial, LOG_LVL_NONE);
@@ -83,149 +95,15 @@ void setup() {
   pinMode(RSTN_PIN, OUTPUT);
   pinMode(DIO4_PIN, OUTPUT);
   pinMode(DIO5_PIN, OUTPUT);
-
-  show_prompt = true;
-  line = "";
 }
 
-void loop() {
-  if (show_prompt) {
-    Serial.print("> ");
+void loop() {}
 
-    show_prompt = false;
-  }
+std::string & trim(std::string &s) {
+  while (!s.empty() && isspace(s.front())) s.erase(s.begin());
+  while (!s.empty() && isspace(s.back())) s.pop_back();
 
-  // Parse command on enter
-  std::string user_input = read_line(Serial.read());
-  std::vector<std::string> args = split(user_input, ' ');
-  if (args.size() == 0) return;
-
-  switch (command_hash(args[0])) {
-    case Command::ON: {
-      JN5189_TurnOn();
-      break;
-    }
-    case Command::OFF: {
-      JN5189_TurnOff();
-      break;
-    }
-    case Command::RESET: {
-      JN5189_Reset();
-      break;
-    }
-    case Command::ISP_ENTER: {
-      JN5189_ISPModeEnter();
-      break;
-    }
-    case Command::ISP_UNLOCK_DEFAULT: {
-      ISP->unlock(JN5189::ISP::ISPUnlockMode::MODE_DEFAULT_STATE);
-      break;
-    }
-    case Command::ISP_UNLOCK_FULL: {
-      ISP->unlock(JN5189::ISP::ISPUnlockMode::MODE_START_ISP);
-      break;
-    }
-    case Command::ISP_DEVICE_INFO: {
-      ISP->device_info();
-      break;
-    }
-    case Command::ISP_MEM_INFO: {
-      if (args.size() < 2) {
-        Serial.println("isp-mem-info requires 1 positional argument: MEMORY_ID");
-        break;
-      }
-
-      auto memory_id = std::stoi(args[1], 0, 16);
-
-      ISP->memory_info(memory_id);
-      break;
-    }
-    case Command::ISP_MEM_OPEN: {
-      if (args.size() < 3) {
-        Serial.println("isp-mem-open requires 2 positional arguments: MEMORY_ID, ACCESS_LEVEL");
-        break;
-      }
-
-      auto memory_id = std::stoi(args[1], 0, 16);
-      auto access_level = std::stoi(args[2], 0, 16);
-
-      ISP->memory_open(memory_id, access_level);
-      break;
-    }
-    case Command::ISP_MEM_CLOSE: {
-      ISP->memory_close();
-      break;
-    }
-    case Command::ISP_MEM_READ: {
-      if (args.size() < 3) {
-        Serial.println("isp-mem-read requires 2 positional arguments: ADDRESS, LENGTH");
-        break;
-      }
-
-      auto address = std::stoi(args[1], 0, 16);
-      auto length = std::stoi(args[2], 0, 16);
-
-      ISP->memory_read(address, length);
-      break;
-    }
-    case Command::SWD_ENTER: {
-      JN5189_SWDModeEnter();
-      break;
-    }
-    case Command::SWD_LEAVE: {
-      JN5189_SWDModeLeave();
-      break;
-    }
-    case Command::SWD_MEM_READ: {
-      if (args.size() < 3) {
-        Serial.println("swd-mem-read requires 2 positional arguments: ADDRESS, LENGTH");
-        break;
-      }
-
-      auto address = std::stoi(args[1], 0, 16);
-      auto length  = std::stoi(args[2], 0, 16);
-      auto data    = SWD->memory_read(address, length);
-
-      Serial.print("Data:");
-      for (auto byte : data) Serial.printf(" %02X", byte);
-      Serial.println();
-
-      break;
-    }
-    default: {
-      Serial.printf("Unrecognised command \"%s\"\n", user_input.c_str());
-    }
-  }
-
-  show_prompt = true;
-}
-
-/**
- * Read a line from the serial monitor ended by (CR)LF. The input is echoed back to the user so
- * they can see the characters being typed
- */
-std::string read_line(char new_char) {
-  // Character 0xFF (255) is used by Serial.read() to signify no data from the serial connection
-  if (new_char > 0 && new_char < 255) {
-    switch (new_char) {
-      case '\r':
-        break;
-      case '\n': {
-        std::string ret_val(line);
-        line = "";
-
-        Serial.println();
-
-        return ret_val;
-      }
-      default: {
-        Serial.print(new_char);
-        line += new_char;
-      }
-    }
-  }
-
-  return "";
+  return s;
 }
 
 std::vector<std::string> split(const std::string &s, char delim) {
@@ -387,4 +265,187 @@ void JN5189_SWDModeLeave() {
 
   pinMode(SWCLK_PIN, INPUT);
   pinMode(SWDIO_PIN, INPUT);
+}
+
+void server_handle_new_client(void *args, AsyncClient *client) {
+  auto remote_ip = client->remoteIP();
+
+  Serial.print("[server] client ");
+  Serial.print(remote_ip);
+  Serial.print(" connected");
+  Serial.println();
+
+  // Register event handlers
+  client->onData(server_handle_data, nullptr);
+  client->onError(server_handle_error, nullptr);
+  client->onTimeout(server_handle_timeout, nullptr);
+  client->onDisconnect(server_handle_disconnect, nullptr);
+
+  // Show command prompt
+  client->write("> ");
+}
+
+void server_handle_data(void *args, AsyncClient *client, void *data, size_t data_len) {
+  auto remote_ip = client->remoteIP();
+
+  // Copy raw data into an std::string
+  char *c_str = new char[data_len + 1];
+  memcpy(c_str, data, data_len);
+  c_str[data_len] = '\0';
+
+  auto command = std::string(c_str);
+  trim(command);
+  delete c_str;
+
+  Serial.print("[server] received data from ");
+  Serial.print(remote_ip);
+  Serial.print(" \"");
+  Serial.print(command.c_str());
+  Serial.print("\"");
+  Serial.println();
+
+  server_handle_command(client, command);
+}
+
+void server_handle_error(void *args, AsyncClient *client, int8_t err) {
+  auto remote_ip = client->remoteIP();
+
+  Serial.print("[server] connection error \"");
+  Serial.print(client->errorToString(err));
+  Serial.print("\" from ");
+  Serial.print(remote_ip);
+  Serial.println();
+}
+
+void server_handle_timeout(void *args, AsyncClient *client, uint32_t timestamp) {
+  auto remote_ip = client->remoteIP();
+
+  Serial.print("[server] received timeout from ");
+  Serial.print(remote_ip);
+  Serial.println();
+}
+
+void server_handle_disconnect(void *args, AsyncClient *client) {
+  auto remote_ip = client->remoteIP();
+
+  Serial.print("[server] client ");
+  Serial.print(remote_ip);
+  Serial.print(" disconnected");
+  Serial.println();
+}
+
+void server_handle_command(AsyncClient *client, const std::string &command) {
+  auto args = split(command, ' ');
+
+  if (args.empty()) {
+    client->write("> ");
+    return;
+  }
+
+  switch (command_hash(args[0])) {
+    case Command::ON: {
+      JN5189_TurnOn();
+      break;
+    }
+    case Command::OFF: {
+      JN5189_TurnOff();
+      break;
+    }
+    case Command::RESET: {
+      JN5189_Reset();
+      break;
+    }
+    case Command::ISP_ENTER: {
+      JN5189_ISPModeEnter();
+      break;
+    }
+    case Command::ISP_UNLOCK_DEFAULT: {
+      ISP->unlock(JN5189::ISP::ISPUnlockMode::MODE_DEFAULT_STATE);
+      break;
+    }
+    case Command::ISP_UNLOCK_FULL: {
+      ISP->unlock(JN5189::ISP::ISPUnlockMode::MODE_START_ISP);
+      break;
+    }
+    case Command::ISP_DEVICE_INFO: {
+      ISP->device_info();
+      break;
+    }
+    case Command::ISP_MEM_INFO: {
+      if (args.size() < 2) {
+        client->write("isp-mem-info requires 1 positional argument: MEMORY_ID\n");
+        break;
+      }
+
+      auto memory_id = std::stoi(args[1], 0, 16);
+
+      ISP->memory_info(memory_id);
+      break;
+    }
+    case Command::ISP_MEM_OPEN: {
+      if (args.size() < 3) {
+        client->write("isp-mem-open requires 2 positional arguments: MEMORY_ID, ACCESS_LEVEL\n");
+        break;
+      }
+
+      auto memory_id = std::stoi(args[1], 0, 16);
+      auto access_level = std::stoi(args[2], 0, 16);
+
+      ISP->memory_open(memory_id, access_level);
+      break;
+    }
+    case Command::ISP_MEM_CLOSE: {
+      ISP->memory_close();
+      break;
+    }
+    case Command::ISP_MEM_READ: {
+      if (args.size() < 3) {
+        client->write("isp-mem-read requires 2 positional arguments: ADDRESS, LENGTH\n");
+        break;
+      }
+
+      auto address = std::stoi(args[1], 0, 16);
+      auto length = std::stoi(args[2], 0, 16);
+
+      ISP->memory_read(address, length);
+      break;
+    }
+    case Command::SWD_ENTER: {
+      JN5189_SWDModeEnter();
+      break;
+    }
+    case Command::SWD_LEAVE: {
+      JN5189_SWDModeLeave();
+      break;
+    }
+    case Command::SWD_MEM_READ: {
+      if (args.size() < 3) {
+        client->write("swd-mem-read requires 2 positional arguments: ADDRESS, LENGTH\n");
+        break;
+      }
+
+      char formatted_byte[4];
+      auto address = std::stoi(args[1], 0, 16);
+      auto length  = std::stoi(args[2], 0, 16);
+      auto data    = SWD->memory_read(address, length);
+
+      client->add("Data:", 6);
+      for (auto byte : data) {
+        sprintf(formatted_byte, " %02X", byte);
+        client->add(formatted_byte, 4);
+      }
+      client->add("\n", 2);
+
+      client->send();
+      break;
+    }
+    default: {
+      auto msg = "Unrecognised command \"" + command + "\"\n";
+
+      client->write(msg.c_str());
+    }
+  }
+
+  // Show command prompt
+  client->write("> ");
 }
