@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include "nvs_flash.h"
 
 #include "env.h"
 #include "jn5189.h"
@@ -60,7 +61,7 @@ void server_handle_timeout(void *args, AsyncClient *client, uint32_t timestamp);
 void server_handle_disconnect(void *args, AsyncClient *client);
 void server_handle_command(AsyncClient *client, const std::string &command);
 
-void setup() {
+extern "C" void app_main(void) {
   // Initialise serial monitor connection
   Serial.begin(SERIAL_MONITOR_BAUD_RATE);
   Serial.println("Serial monitor initialised");
@@ -70,6 +71,7 @@ void setup() {
   Serial.println("UART2 initialised");
 
   // Initialise WiFi connection
+  nvs_flash_init();
   WiFi.begin(WIFI_SSID, WIFI_PASS);
 
   Serial.printf("Connecting to \"%s\"", WIFI_SSID);
@@ -96,8 +98,6 @@ void setup() {
   pinMode(DIO4_PIN, OUTPUT);
   pinMode(DIO5_PIN, OUTPUT);
 }
-
-void loop() {}
 
 std::string & trim(std::string &s) {
   while (!s.empty() && isspace(s.front())) s.erase(s.begin());

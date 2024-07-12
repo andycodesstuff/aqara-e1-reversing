@@ -120,7 +120,7 @@ uint8_t JN5189::SWD::__access_register(RequestAPnDP APnDP,
   if (ack & ACK_WAIT) {
     // Exponential backoff delay so that, hopefully, the target can fulfill the next request
     auto retry = (REG_ACCESS_MAX_RETRIES - max_retries) + 1;
-    auto delay = pow(2, retry);
+    auto delay = (int) pow(2, retry);
     delayMicroseconds(delay);
 
     if (log_level & LOG_LVL_DEBUG) {
