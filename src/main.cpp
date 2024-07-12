@@ -377,7 +377,7 @@ void server_handle_command(AsyncClient *client, const std::string &command) {
         break;
       }
 
-      auto memory_id = std::stoi(args[1], 0, 16);
+      auto memory_id = std::stoul(args[1], nullptr, 16);
 
       ISP->memory_info(memory_id);
       break;
@@ -388,8 +388,8 @@ void server_handle_command(AsyncClient *client, const std::string &command) {
         break;
       }
 
-      auto memory_id = std::stoi(args[1], 0, 16);
-      auto access_level = std::stoi(args[2], 0, 16);
+      auto memory_id    = std::stoul(args[1], nullptr, 16);
+      auto access_level = std::stoul(args[2], nullptr, 16);
 
       ISP->memory_open(memory_id, access_level);
       break;
@@ -404,8 +404,8 @@ void server_handle_command(AsyncClient *client, const std::string &command) {
         break;
       }
 
-      auto address = std::stoi(args[1], 0, 16);
-      auto length = std::stoi(args[2], 0, 16);
+      auto address = std::stoul(args[1], nullptr, 16);
+      auto length  = std::stoul(args[2], nullptr, 16);
 
       ISP->memory_read(address, length);
       break;
@@ -425,8 +425,8 @@ void server_handle_command(AsyncClient *client, const std::string &command) {
       }
 
       char formatted_byte[4];
-      auto address = std::stoi(args[1], 0, 16);
-      auto length  = std::stoi(args[2], 0, 16);
+      auto address = std::stoul(args[1], nullptr, 16);
+      auto length  = std::stoul(args[2], nullptr, 16);
       auto data    = SWD->memory_read(address, length);
 
       // Intentionally skip the string terminator as we're really sending raw bytes here, yet
